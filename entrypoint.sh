@@ -43,8 +43,8 @@ if [[ "$USER_EMAIL" == "null" ]]; then
 	USER_EMAIL="$USER_LOGIN@users.noreply.github.com"
 fi
 
-if [[ "$(echo "$pr_resp" | jq -r .rebaseable)" != "true" ]]; then
-	echo "GitHub doesn't think that the PR is rebaseable!"
+if [[ "$(echo "$pr_resp" | jq -r .rebaseable)" != "true" || "$(echo "$pr_resp" | jq -r .mergeable)" != "true" ]]; then
+	echo "GitHub doesn't think that the PR is rebaseable or mergeable!"
 	echo "API response: $pr_resp"
 	exit 1
 fi
