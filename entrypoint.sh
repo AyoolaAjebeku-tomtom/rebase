@@ -43,8 +43,19 @@ if [[ "$USER_EMAIL" == "null" ]]; then
 	USER_EMAIL="$USER_LOGIN@users.noreply.github.com"
 fi
 
-if [[ "$(echo "$pr_resp" | jq -r .rebaseable)" != "true" || "$(echo "$pr_resp" | jq -r .mergeable)" != "true" ]]; then
-	echo "GitHub doesn't think that the PR is rebaseable or mergeable!"
+if [[ "$GITHUB_COMMENT" == "/rebase" ]]; then
+  IS_REBASE=true
+fi
+if [[ "$GITHUB_COMMENT" == "/merge" ]]; then
+  IS_MERGE=true
+fi
+
+if [[ $IS_REBASE && "$(echo "$pr_resp" | jq -r .rebaseable)" != "true" ]]; then
+	echo "GitHub doesn't think that the PR is rebaseable!"
+	echo "API response: $pr_resp"
+	exit 1
+elif [[ $IS_MERGE && "$(echo "$pr_resp" | jq -r .mergeable)" != "true" ]]; then
+	echo "GitHub doesn't think that the PR is mergeable!"
 	echo "API response: $pr_resp"
 	exit 1
 fi
@@ -79,12 +90,12 @@ git fetch fork $HEAD_BRANCH
 # do the rebase
 git checkout -b $HEAD_BRANCH fork/$HEAD_BRANCH
 
-if [[ $GITHUB_COMMENT == "/rebase" ]]; then
+if [[ $IS_REBASE ]]; then
     # It's a rebase
 	git rebase origin/"$BASE_BRANCH"
 	# push back
 	git push --force-with-lease fork "$HEAD_BRANCH"
-elif [[ $GITHUB_COMMENT == "/merge" ]]; then
+elif [[ $IS_MERGE ]]; then
     # It's a merge
 	git merge origin/"$BASE_BRANCH"
 	# push back
